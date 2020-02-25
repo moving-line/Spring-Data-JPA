@@ -3,14 +3,13 @@ package study.datajpa.repository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
-import org.springframework.data.jpa.repository.EntityGraph;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Modifying;
-import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.*;
 import org.springframework.data.repository.query.Param;
 import study.datajpa.dto.MemberDto;
 import study.datajpa.entity.Member;
 
+import javax.persistence.LockModeType;
+import javax.persistence.QueryHint;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -36,12 +35,15 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
     List<Member> findByNames(@Param("names") Collection<String> names);
 
     List<Member> findListByUsername(String username);
+
     Member findMemberByUsername(String username);
+
     Optional<Member> findOptionalByUsername(String username);
 
-//    페이징 시 성능을 위해 count() 쿼리 분리하여 아래처럼 설정 가능
+    //    페이징 시 성능을 위해 count() 쿼리 분리하여 아래처럼 설정 가능
 //    @Query(value = "select m from Member m left join m.team t", countQuery = "select count(m.username) from Member m")
     Page<Member> findByAge(int age, Pageable pageable);
+
     Slice<Member> findSliceByAge(int age, Pageable pageable);
 
     @Modifying(clearAutomatically = true)
@@ -63,5 +65,10 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
     @EntityGraph(attributePaths = {"team"})
     List<Member> findEntityGraphByUsername(@Param("username") String username);
 
+    @QueryHints(value = @QueryHint(name = "org.hibernate.readOnly", value = "true"))
+    Member findReadOnlyByUsername(String username);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    List<Member> findLockByUsername(String username);
 
 }
