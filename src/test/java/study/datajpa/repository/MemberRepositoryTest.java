@@ -256,4 +256,54 @@ class MemberRepositoryTest {
         //then
         assertThat(resultCount).isEqualTo(3);
     }
+
+    @Test
+    void findMemberLazy() {
+        //given
+        Team teamA = new Team("teamA");
+        Team teamB = new Team("teamB");
+        teamRepository.save(teamA);
+        teamRepository.save(teamB);
+
+        Member member1 = new Member("member1", 10, teamA);
+        Member member2 = new Member("member2", 20, teamB);
+        memberRepository.save(member1);
+        memberRepository.save(member2);
+
+        em.flush();
+        em.clear();
+
+        //when
+        List<Member> members = memberRepository.findAll();
+
+        for (Member member : members) { // 이 경우, LAZY 로딩으로 인해 N+1 문제 발생
+            System.out.println("member = " + member);
+            System.out.println("member.teamClass = " + member.getTeam().getClass());
+            System.out.println("member.team = " + member.getTeam().getName());
+        }
+
+        em.flush();
+        em.clear();
+        System.out.println("===============================");
+
+        List<Member> membersFetch = memberRepository.findMemberFetchJoin();
+
+        for (Member member : membersFetch) { // fetch join 으로 문제 해결
+            System.out.println("member = " + member);
+            System.out.println("member.teamClass = " + member.getTeam().getClass());
+            System.out.println("member.team = " + member.getTeam().getName());
+        }
+
+        em.flush();
+        em.clear();
+        System.out.println("===============================");
+
+        List<Member> membersEntityGraph = memberRepository.findMemberEntityGraph();
+
+        for (Member member : membersEntityGraph) { // @EntityGraph 로 문제해결
+            System.out.println("member = " + member);
+            System.out.println("member.teamClass = " + member.getTeam().getClass());
+            System.out.println("member.team = " + member.getTeam().getName());
+        }
+    }
 }
