@@ -1,9 +1,13 @@
 package study.datajpa.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
+import study.datajpa.dto.MemberDto;
 import study.datajpa.entity.Member;
 import study.datajpa.repository.MemberRepository;
 
@@ -28,8 +32,20 @@ public class MemberController {
         return member.getUsername();
     }
 
+
+    @GetMapping("/members")
+    public Page<MemberDto> list(@PageableDefault(size = 5) Pageable pageable) {
+        // 페이지 인덱스를 0이 아닌 1부터 시작하고 싶다면? 방법 2개 존재(사실 그냥 쓰는걸 추천)
+        // 1) Pageable 을 인수로 받지말고 내가 PageRequest 만들어서 findAll()의 인자 넘겨주자.
+        // PageRequest request = PageRequest.of(1, 2). 이때는 반환인 Page 도 내가 만들어야함
+        // 2) application.yml김에 data.web.pageable.one-indexed-parameter:true로! 그러나 Page내 다른 정보들이 현재 page와 다른 문제생김
+        return memberRepository.findAll(pageable).map(MemberDto::new);
+    }
+
     @PostConstruct
     public void init() {
-        memberRepository.save(new Member("userA"));
+        for (int i = 0; i < 100; i++) {
+            memberRepository.save(new Member("user" + i, i));
+        }
     }
 }
