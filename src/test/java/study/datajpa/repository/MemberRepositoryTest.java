@@ -3,6 +3,10 @@ package study.datajpa.repository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Slice;
+import org.springframework.data.domain.Sort;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.transaction.annotation.Transactional;
 import study.datajpa.dto.MemberDto;
@@ -180,5 +184,50 @@ class MemberRepositoryTest {
 
         // Spring data JPA 에서는 순수 JPA와 다르게, 없는걸 조회해도 Exception 터지지 않음. 내부적으로 try/catch 하여 빈값 반환. (result 4,5)
         // Java8 이후엔 Optional 으로 대동단결 (result6)
+    }
+
+    @Test
+    void pagingTest() {
+        //given
+        memberRepository.save(new Member("member1", 10));
+        memberRepository.save(new Member("member2", 10));
+        memberRepository.save(new Member("member3", 10));
+        memberRepository.save(new Member("member4", 10));
+        memberRepository.save(new Member("member5", 10));
+
+        int age = 10;
+        PageRequest pageRequest = PageRequest.of(0, 3, Sort.by(Sort.Direction.DESC, "username"));
+
+        //when
+        Page<Member> page = memberRepository.findByAge(age, pageRequest);
+        Slice<Member> pageSlice = memberRepository.findSliceByAge(age, pageRequest);
+
+        // 절대 엔티티를 반환해선 안되므로, 실제로는 아래처럼 DTO로 변환 필수.
+        Page<MemberDto> toDTo = page.map(m -> new MemberDto(m.getId(), m.getUsername(), null));
+
+        //then
+        List<Member> content = page.getContent();
+
+        // for Page
+        assertThat(content.size()).isEqualTo(3);
+        assertThat(page.getTotalElements()).isEqualTo(5);
+        assertThat(page.getNumber()).isEqualTo(0);
+        assertThat(page.getTotalPages()).isEqualTo(2);
+        assertThat(page.isFirst()).isTrue();
+        assertThat(page.hasNext()).isTrue();
+
+        // for Slice
+        assertThat(pageSlice.getContent().size()).isEqualTo(3);
+        assertThat(pageSlice.getNumber()).isEqualTo(0);
+        assertThat(pageSlice.isFirst()).isTrue();
+        assertThat(pageSlice.hasNext()).isTrue();
+
+        // for DTO
+        assertThat(toDTo.getContent().size()).isEqualTo(3);
+        assertThat(toDTo.getTotalElements()).isEqualTo(5);
+        assertThat(toDTo.getNumber()).isEqualTo(0);
+        assertThat(toDTo.getTotalPages()).isEqualTo(2);
+        assertThat(toDTo.isFirst()).isTrue();
+        assertThat(toDTo.hasNext()).isTrue();
     }
 }
