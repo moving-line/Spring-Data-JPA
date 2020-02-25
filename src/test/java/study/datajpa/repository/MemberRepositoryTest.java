@@ -11,6 +11,7 @@ import study.datajpa.entity.Team;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -154,5 +155,30 @@ class MemberRepositoryTest {
         List<Member> result = memberRepository.findByNames(Arrays.asList("AAA","CCC"));
         assertThat(result.get(0)).isEqualTo(member1);
         assertThat(result.get(1)).isEqualTo(member3);
+    }
+
+    @Test
+    void variousReturnTypeTest() {
+        Member member1 = new Member("AAA", 10);
+        memberRepository.save(member1);
+
+        List<Member> result1 = memberRepository.findListByUsername("AAA");
+        Member result2 = memberRepository.findMemberByUsername("AAA");
+        Optional<Member> result3 = memberRepository.findOptionalByUsername("AAA");
+
+        assertThat(result1.get(0)).isEqualTo(member1);
+        assertThat(result2).isEqualTo(member1);
+        assertThat(result3.get()).isEqualTo(member1);
+
+        List<Member> result4 = memberRepository.findListByUsername("asdasdwqf");
+        Member result5 = memberRepository.findMemberByUsername("asdasdwqf");
+        Optional<Member> result6 = memberRepository.findOptionalByUsername("asdasdwqf");
+
+        System.out.println(result4);
+        System.out.println(result5);
+        System.out.println(result6);
+
+        // Spring data JPA 에서는 순수 JPA와 다르게, 없는걸 조회해도 Exception 터지지 않음. 내부적으로 try/catch 하여 빈값 반환. (result 4,5)
+        // Java8 이후엔 Optional 으로 대동단결 (result6)
     }
 }
