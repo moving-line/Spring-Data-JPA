@@ -13,6 +13,7 @@ import study.datajpa.dto.MemberDto;
 import study.datajpa.entity.Member;
 import study.datajpa.entity.Team;
 
+import javax.persistence.EntityManager;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -28,6 +29,8 @@ class MemberRepositoryTest {
     private MemberRepository memberRepository;
     @Autowired
     private TeamRepository teamRepository;
+    @Autowired
+    private EntityManager em;
 
     @Test
     void memberTest() {
@@ -156,7 +159,7 @@ class MemberRepositoryTest {
         memberRepository.save(member2);
         memberRepository.save(member3);
 
-        List<Member> result = memberRepository.findByNames(Arrays.asList("AAA","CCC"));
+        List<Member> result = memberRepository.findByNames(Arrays.asList("AAA", "CCC"));
         assertThat(result.get(0)).isEqualTo(member1);
         assertThat(result.get(1)).isEqualTo(member3);
     }
@@ -229,5 +232,28 @@ class MemberRepositoryTest {
         assertThat(toDTo.getTotalPages()).isEqualTo(2);
         assertThat(toDTo.isFirst()).isTrue();
         assertThat(toDTo.hasNext()).isTrue();
+    }
+
+    @Test
+    void bulkUpdateTest() {
+        //given
+        memberRepository.save(new Member("member1", 10));
+        memberRepository.save(new Member("member2", 19));
+        memberRepository.save(new Member("member3", 20));
+        memberRepository.save(new Member("member4", 21));
+        memberRepository.save(new Member("member5", 40));
+
+        //when
+        // 벌크연산은 영속성컨텍스트 무시하고 바로 DB에 때림.
+        // 해당 쿼리에 @Modifying(clearAutomatically = true) 옵션을 쓰던가, 벌크연산 끝나면 flush/clear 해주는 식으로 영속성컨텍스트 초기화 필요
+        int resultCount = memberRepository.bulkAgePlus(20);
+
+//        em.flush();
+//        em.clear();
+
+        assertThat(memberRepository.findByUsername("member5").get(0).getAge()).isEqualTo(41);
+
+        //then
+        assertThat(resultCount).isEqualTo(3);
     }
 }
