@@ -335,4 +335,43 @@ class MemberRepositoryTest {
     void callCustom() {
         List<Member> memberCustom = memberRepository.findMemberCustom();
     }
+
+
+    @Test
+    void projectionsTest() {
+        //given
+        Team teamA = new Team("teamA");
+        teamRepository.save(teamA);
+
+        Member member1 = new Member("member1", 10, teamA);
+        Member member2 = new Member("member2", 20, teamA);
+        memberRepository.save(member1);
+        memberRepository.save(member2);
+
+        em.flush();
+        em.clear();
+
+        //when
+        List<UsernameOnly> result1 = memberRepository.findProjectionsRepoByUsername("member1");
+        for (UsernameOnly usernameOnly : result1) {
+            System.out.println("usernameOnly = " + usernameOnly);
+        }
+
+        List<UsernameOnlyDto> result2 = memberRepository.findProjectionsClassByUsername("member1");
+        for (UsernameOnlyDto usernameOnlyDto : result2) {
+            System.out.println("usernameOnlyDto = " + usernameOnlyDto);
+        }
+
+        List<UsernameOnlyDto> result3 = memberRepository.findProjectionsGenericByUsername("member1", UsernameOnlyDto.class);
+        for (UsernameOnlyDto usernameOnlyDto : result3) {
+            System.out.println("usernameOnlyDto = " + usernameOnlyDto);
+        }
+
+        // 중첩구조일 때, 프로젝션 대상이 ROOT 가 아니면 최적화없이 일단 다 불러오고 나중에 계산한다(Team)
+        List<NestedClosedProjections> result4 = memberRepository.findProjectionsGenericByUsername("member1", NestedClosedProjections.class);
+        for (NestedClosedProjections nestedClosedProjections : result4) {
+            System.out.println("nestedClosedProjections = " + nestedClosedProjections.getUsername());
+            System.out.println("nestedClosedProjections = " + nestedClosedProjections.getTeam().getName());
+        }
+    }
 }
