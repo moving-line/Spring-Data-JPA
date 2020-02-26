@@ -75,4 +75,13 @@ public interface MemberRepository extends JpaRepository<Member, Long>, MemberRep
     List<UsernameOnlyDto> findProjectionsClassByUsername(@Param("username") String username);
     <T> List<T> findProjectionsGenericByUsername(@Param("username") String username, Class<T> type); // 동적 projections
 
+    // 네이티브 쿼리는 한계가 많아서 비추. 차라리 JdbcTemplate/myBatis 권장
+    // 단 최근 업데이트 덕분에 정적쿼리를 쓰면서 DTO를 뽑을 때 쓸 수는 있다
+    @Query(value = "select * from Member m where username = ?", nativeQuery = true)
+    Member findByNativeQuery(String username);
+
+    @Query(value = "select m.member_id as id, m.username, t.name as teamName from member m left join team t",
+            countQuery = "select count(*) from member",
+            nativeQuery = true)
+    Page<MemberProjection> findByNativeProjection(Pageable pageable);
 }
